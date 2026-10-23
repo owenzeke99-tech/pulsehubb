@@ -1,0 +1,321 @@
+-- // Services
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- // Configuration
+local CORRECT_KEY = "PulsehubKeyKalwpwjwbLapoqhwbwkBamwkwuwo"
+local KEY_LINK = "https://link4m.net/NgJHo" -- Link Get Key mới
+local SAVE_FILE = "PulseHub_KeyData.json"
+local KEY_DURATION = 86400 -- 24 giờ tính bằng giây (24 * 60 * 60)
+
+-- // Helper Functions for Hidden Key Persistence (24 Hours)
+local function getSavedData()
+	if pcall(readfile, SAVE_FILE) then
+		local raw = readfile(SAVE_FILE)
+		local success, decoded = pcall(function()
+			return HttpService:JSONDecode(raw)
+		end)
+		if success and type(decoded) == "table" then
+			return decoded
+		end
+	end
+	return nil
+end
+
+local function saveKeyData(key)
+	local data = {
+		Key = key,
+		SavedTime = os.time()
+	}
+	pcall(writefile, SAVE_FILE, HttpService:JSONEncode(data))
+end
+
+local function isKeyValid()
+	local data = getSavedData()
+	if data and data.Key == CORRECT_KEY and data.SavedTime then
+		local timePassed = os.time() - data.SavedTime
+		if timePassed < KEY_DURATION then
+			return true
+		end
+	end
+	return false
+end
+
+-- // Auto Bypass Key Check if Saved & Valid (< 24 Hours)
+if isKeyValid() then
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/PulseZax/Loader/refs/heads/main/.lua"))()
+	return
+end
+
+-- // ScreenGui Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PulseHub_KeySystem"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- // Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(11, 15, 25)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 440, 0, 270)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 16)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Parent = MainFrame
+UIStroke.Color = Color3.fromRGB(0, 132, 255)
+UIStroke.Thickness = 2
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- // Ambient Top Glow
+local TopGlow = Instance.new("Frame")
+TopGlow.Name = "TopGlow"
+TopGlow.Parent = MainFrame
+TopGlow.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+TopGlow.BorderSizePixel = 0
+TopGlow.Position = UDim2.new(0.15, 0, 0, 0)
+TopGlow.Size = UDim2.new(0.7, 0, 0, 2)
+
+local GlowGradient = Instance.new("UIGradient")
+GlowGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(11, 15, 25)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 180, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(11, 15, 25))
+})
+GlowGradient.Parent = TopGlow
+
+-- // Header Title
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundTransparency = 1
+Title.Position = UDim2.new(0, 0, 0, 18)
+Title.Size = UDim2.new(1, 0, 0, 38)
+Title.Font = Enum.Font.LuckiestGuy
+Title.Text = "PULSE HUB"
+Title.TextColor3 = Color3.fromRGB(0, 185, 255)
+Title.TextSize = 28
+Title.TextStrokeTransparency = 0.6
+Title.TextStrokeColor3 = Color3.fromRGB(0, 60, 120)
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Name = "Subtitle"
+Subtitle.Parent = MainFrame
+Subtitle.BackgroundTransparency = 1
+Subtitle.Position = UDim2.new(0, 0, 0, 56)
+Subtitle.Size = UDim2.new(1, 0, 0, 18)
+Subtitle.Font = Enum.Font.FredokaOne
+Subtitle.Text = "Key Verification System"
+Subtitle.TextColor3 = Color3.fromRGB(120, 150, 185)
+Subtitle.TextSize = 13
+
+-- // Modern In-Menu Notification Card
+local NotificationCard = Instance.new("Frame")
+NotificationCard.Name = "NotificationCard"
+NotificationCard.Parent = MainFrame
+NotificationCard.BackgroundColor3 = Color3.fromRGB(17, 24, 38)
+NotificationCard.Position = UDim2.new(0.08, 0, 0, 82)
+NotificationCard.Size = UDim2.new(0.84, 0, 0, 32)
+
+local CardCorner = Instance.new("UICorner")
+CardCorner.CornerRadius = UDim.new(0, 8)
+CardCorner.Parent = NotificationCard
+
+local CardStroke = Instance.new("UIStroke")
+CardStroke.Parent = NotificationCard
+CardStroke.Color = Color3.fromRGB(30, 55, 90)
+CardStroke.Thickness = 1.2
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Parent = NotificationCard
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Size = UDim2.new(1, 0, 1, 0)
+StatusLabel.Font = Enum.Font.GothamMedium
+StatusLabel.Text = "Please enter your access key below"
+StatusLabel.TextColor3 = Color3.fromRGB(160, 180, 205)
+StatusLabel.TextSize = 12
+
+-- // Input Box Holder
+local TextBoxHolder = Instance.new("Frame")
+TextBoxHolder.Name = "TextBoxHolder"
+TextBoxHolder.Parent = MainFrame
+TextBoxHolder.BackgroundColor3 = Color3.fromRGB(17, 24, 38)
+TextBoxHolder.Position = UDim2.new(0.08, 0, 0, 126)
+TextBoxHolder.Size = UDim2.new(0.84, 0, 0, 46)
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 10)
+BoxCorner.Parent = TextBoxHolder
+
+local BoxStroke = Instance.new("UIStroke")
+BoxStroke.Parent = TextBoxHolder
+BoxStroke.Color = Color3.fromRGB(30, 55, 90)
+BoxStroke.Thickness = 1.4
+
+local TextBox = Instance.new("TextBox")
+TextBox.Parent = TextBoxHolder
+TextBox.BackgroundTransparency = 1
+TextBox.Position = UDim2.new(0, 14, 0, 0)
+TextBox.Size = UDim2.new(1, -28, 1, 0)
+TextBox.Font = Enum.Font.Gotham
+TextBox.PlaceholderText = "Enter key here..."
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(245, 248, 255)
+TextBox.PlaceholderColor3 = Color3.fromRGB(80, 105, 135)
+TextBox.TextSize = 14
+TextBox.ClearTextOnFocus = false
+
+-- // HORIZONTAL BUTTON CONTAINER
+local ButtonContainer = Instance.new("Frame")
+ButtonContainer.Name = "ButtonContainer"
+ButtonContainer.Parent = MainFrame
+ButtonContainer.BackgroundTransparency = 1
+ButtonContainer.Position = UDim2.new(0.08, 0, 0, 186)
+ButtonContainer.Size = UDim2.new(0.84, 0, 0, 44)
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ButtonContainer
+UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 12)
+
+-- // Get Key Button
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Name = "GetKeyBtn"
+GetKeyBtn.Parent = ButtonContainer
+GetKeyBtn.LayoutOrder = 1
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(20, 29, 45)
+GetKeyBtn.Size = UDim2.new(0.48, -6, 1, 0)
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.Text = "GET KEY"
+GetKeyBtn.TextColor3 = Color3.fromRGB(110, 160, 225)
+GetKeyBtn.TextSize = 13
+
+local GetCorner = Instance.new("UICorner")
+GetCorner.CornerRadius = UDim.new(0, 10)
+GetCorner.Parent = GetKeyBtn
+
+local GetStroke = Instance.new("UIStroke")
+GetStroke.Parent = GetKeyBtn
+GetStroke.Color = Color3.fromRGB(35, 55, 85)
+GetStroke.Thickness = 1.2
+
+-- // Check Key Button
+local CheckKeyBtn = Instance.new("TextButton")
+CheckKeyBtn.Name = "CheckKeyBtn"
+CheckKeyBtn.Parent = ButtonContainer
+CheckKeyBtn.LayoutOrder = 2
+CheckKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 110, 220)
+CheckKeyBtn.Size = UDim2.new(0.48, -6, 1, 0)
+CheckKeyBtn.Font = Enum.Font.GothamBold
+CheckKeyBtn.Text = "CHECK KEY"
+CheckKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheckKeyBtn.TextSize = 13
+
+local CheckCorner = Instance.new("UICorner")
+CheckCorner.CornerRadius = UDim.new(0, 10)
+CheckCorner.Parent = CheckKeyBtn
+
+local BtnGradient = Instance.new("UIGradient")
+BtnGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 140, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 80, 180))
+})
+BtnGradient.Rotation = 90
+BtnGradient.Parent = CheckKeyBtn
+
+-- // Hover Animations
+CheckKeyBtn.MouseEnter:Connect(function()
+	TweenService:Create(CheckKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 130, 255)}):Play()
+end)
+CheckKeyBtn.MouseLeave:Connect(function()
+	TweenService:Create(CheckKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 110, 220)}):Play()
+end)
+
+GetKeyBtn.MouseEnter:Connect(function()
+	TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(28, 40, 62)}):Play()
+end)
+GetKeyBtn.MouseLeave:Connect(function()
+	TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(20, 29, 45)}):Play()
+end)
+
+-- // Smooth Shake Animation
+local isShaking = false
+local function smoothShake()
+	if isShaking then return end
+	isShaking = true
+	
+	local basePos = UDim2.new(0.5, 0, 0.5, 0)
+	local offsets = {12, -10, 8, -6, 3, 0}
+	local duration = 0.04
+
+	for _, offset in ipairs(offsets) do
+		local tween = TweenService:Create(
+			MainFrame,
+			TweenInfo.new(duration, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+			{Position = basePos + UDim2.new(0, offset, 0, 0)}
+		)
+		tween:Play()
+		tween.Completed:Wait()
+	end
+	
+	isShaking = false
+end
+
+-- // Button Actions
+CheckKeyBtn.MouseButton1Click:Connect(function()
+	if TextBox.Text == CORRECT_KEY then
+		StatusLabel.TextColor3 = Color3.fromRGB(46, 204, 113)
+		StatusLabel.Text = "Key correct! Loading script..."
+		
+		TweenService:Create(CardStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(46, 204, 113)}):Play()
+		TweenService:Create(NotificationCard, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(15, 35, 28)}):Play()
+		
+		-- Lưu Key kèm mốc thời gian (Ẩn 24 giờ)
+		saveKeyData(CORRECT_KEY)
+		
+		task.wait(0.6)
+		ScreenGui:Destroy()
+		
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/PulseZax/Loader/refs/heads/main/.lua"))()
+	else
+		StatusLabel.TextColor3 = Color3.fromRGB(240, 70, 85)
+		StatusLabel.Text = "Incorrect key! Please try again."
+		TextBox.Text = "" -- Tự động xoá chữ khi nhập sai
+		
+		TweenService:Create(CardStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(240, 70, 85)}):Play()
+		TweenService:Create(BoxStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(240, 70, 85)}):Play()
+		TweenService:Create(NotificationCard, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 18, 25)}):Play()
+		
+		smoothShake()
+		
+		task.wait(1.5)
+		TweenService:Create(CardStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(30, 55, 90)}):Play()
+		TweenService:Create(BoxStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(30, 55, 90)}):Play()
+		TweenService:Create(NotificationCard, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(17, 24, 38)}):Play()
+		StatusLabel.TextColor3 = Color3.fromRGB(160, 180, 205)
+		StatusLabel.Text = "Please enter your access key below"
+	end
+end)
+
+GetKeyBtn.MouseButton1Click:Connect(function()
+	setclipboard(KEY_LINK)
+	StatusLabel.TextColor3 = Color3.fromRGB(0, 190, 255)
+	StatusLabel.Text = "Key link copied to clipboard!"
+	TweenService:Create(CardStroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(0, 190, 255)}):Play()
+	
+	task.wait(1.5)
+	TweenService:Create(CardStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(30, 55, 90)}):Play()
+	StatusLabel.TextColor3 = Color3.fromRGB(160, 180, 205)
+	StatusLabel.Text = "Please enter your access key below"
+end)
